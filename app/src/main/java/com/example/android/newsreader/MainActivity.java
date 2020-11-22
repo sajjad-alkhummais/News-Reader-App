@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
 
                 for (int i = 0; i < numberOfTitles; i++) {
                     Log.i("Case", "Json pulling data");
+                    Log.i("Count", "Json pulling data");
 
 
                     //Setting the url that contain the information of each report
@@ -168,7 +169,11 @@ public class MainActivity extends AppCompatActivity {
 
 
             }
-            Log.i("counterOfShowing3", "1 ");
+            c.close();
+
+            Log.i("counterOfShowing", "1 ");
+            Log.i("counterOfShowing", "Just Checking ");
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -233,6 +238,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //this is an unused function
+    public void addMovie(String title, int year) {
+        ContentValues values = new ContentValues();
+        values.put("title", title);
+        values.put("year", year);
+        //database.insert( , null, values);
+        database.close();
+    }
 
     public String fetchingJSONData(URL url) {
         String result = "";
