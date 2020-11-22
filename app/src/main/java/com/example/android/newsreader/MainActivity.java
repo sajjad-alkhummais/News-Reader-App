@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
 
                 for (int i = 0; i < numberOfTitles; i++) {
                     Log.i("Case", "Json pulling data");
-                    Log.i("Count", "Json pulling data");
+                    Log.i("Count", Integer.toString(i));
 
 
                     //Setting the url that contain the information of each report
