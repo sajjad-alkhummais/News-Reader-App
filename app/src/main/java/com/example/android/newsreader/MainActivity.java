@@ -45,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
     Boolean areThereNews = false;
     Boolean areNewsRefreshed = false;
 
+
     public class  JSONDownloader extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
@@ -232,13 +233,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //this is an unused function
-    public void addMovie(String title, int year) {
-        ContentValues values = new ContentValues();
-        values.put("title", title);
-        values.put("year", year);
-        //database.insert( , null, values);
-        database.close();
-    }
 
     public String fetchingJSONData(URL url) {
         String result = "";
