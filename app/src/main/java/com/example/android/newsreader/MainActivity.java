@@ -45,7 +45,6 @@ public class MainActivity extends AppCompatActivity {
     Boolean areThereNews = false;
     Boolean areNewsRefreshed = false;
 
-
     public class  JSONDownloader extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
