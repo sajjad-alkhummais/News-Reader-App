@@ -19,7 +19,12 @@ public class WebActivity extends AppCompatActivity {
 
         String clickedReportURL = currentIntent.getStringExtra("clickedReportUrl");
 
-        Log.i("Works!", clickedReportURL);
+        //sometimes
+       /* if(clickedReportURL.startsWith("http://")){
+            clickedReportURL = clickedReportURL.replace("http:", "https:");
+            Log.i("Works!", clickedReportURL);
+        }*/
+
 
 
         WebView webView = (WebView) findViewById(R.id.webView);

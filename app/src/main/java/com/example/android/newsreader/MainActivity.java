@@ -43,32 +43,36 @@ public class MainActivity extends AppCompatActivity {
     Button refreshNewsBtn;
 
     Boolean areThereNews = false;
+    Boolean firstTimeRunningApp;
     Boolean areNewsRefreshed = false;
 
-    public class  JSONDownloader extends AsyncTask<String, Void, String> {
+    public class JSONDownloader extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... urls) {
-            String topStoriesData = "";
+            String topStoriesData;
 
             URL url;
-            URL propUrl = null;
+            URL propUrl;
             String propUrlString;
             HttpURLConnection urlConnection, urlConnection1 = null;
 
             try {
-                //the top stories url
+                //storing the top stories url into "url" URL variable
                 url = new URL(urls[0]);
                 //fetching data from it and store it in this string
                 topStoriesData = fetchingJSONData(url);
 
 
+                //We store the json array of top stories inside arr variable
                 JSONArray arr = new JSONArray(topStoriesData);
 
                 String topStoriesPropData = "";
-                Log.i("Case", "Json ran");
+
+                //We initialize the cursor every time we want to use it to get how many titles are
+                //in the data base
+                Cursor c = database.rawQuery("SELECT * FROM news", null);
 
                 for (int i = 0; i < numberOfTitles; i++) {
-                    Log.i("Case", "Json pulling data");
                     Log.i("Count", Integer.toString(i));
 
 
@@ -89,48 +93,55 @@ public class MainActivity extends AppCompatActivity {
                     //Log.i("urls", urlsOfTitles);
 
 
-                    c = database.rawQuery("SELECT * FROM news", null);
-
-
                     String s = "INSERT INTO news (title, url) VALUES ('" + title + "','" + urlsOfTitles + "')";
-                    database.execSQL(s);
 
-                    //showSavedNews();
 
-                    Log.i("CaseOfDb", "ThereIsNone");
-                    /* else {
-                        Log.i("CaseOfDb", "ThereIsSome");
+                    //If there aren't any news stored in the dataBase then we add news to the data base -->1
+                    //And update the variable (firstTimeRunningApp) to be true because this is indeed
+                    // the first time we run the app because the database is empty-->2
 
-                        if(i==0){
+                    if (c.getCount() < numberOfTitles) {   //1
+                        
+                        firstTimeRunningApp = true;  //2
 
-                            areThereNews = thereAreNewNews(title);
-                            Log.i("CaseOfNewNews", "There is new news:" + areThereNews.toString());
+                        database.execSQL(s);
+
+                    } else {
+
+
+                        //1-If there are news in the DB and i = 0 which means it is the first turn of the loop (we can't
+                        //keep checking we need to check only one time, then we decide whether we need to
+                        //keep adding the news and the urls 5 times or not, according to the result).
+                        //2-Check if stored news are updated.
+                        //3-if the news are up to date, then do nothing
+                        //4-if they aren't and (i = 0) it is the first turn,
+                        //5-then delete the old news from the data base
+                        //6-and clear the arrays
+                        //7-Then add the new news to the dataBase
+
+                        if (i == 0) {        //1
+
+
+                            areThereNews = thereAreNewNews(title);     //2
+
 
                         }
-                        if (areThereNews) {
 
-                            if(i == 0) {
-                                database.execSQL("DELETE FROM news");
-                                newsFetched.clear();
-                                newsUrls.clear();
-                            }
-                            String s = "INSERT INTO news (title, url) VALUES ('" + title + "','" + urlsOfTitles + "')";
-                            database.execSQL(s);
+                        if (areThereNews) {     //4
 
-
-                            if(i == 4) {
-                                showSavedNews();
+                            if (i == 0) {  //4
+                                database.execSQL("DELETE FROM news");    //5
+                                newsFetched.clear();                     //6
+                                newsUrls.clear();                        //6
                             }
 
-                            Log.i("CaseOfNewNews", "There is new news");
-
-
+                            database.execSQL(s);  //7
                         }
-                    }*/
-
+                    }
 
                 }
-
+                //We close the cursor since We don't need it any more
+                c.close();
 
                 return topStoriesPropData;
             } catch (Exception e) {
@@ -143,12 +154,23 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(String s) {
             super.onPostExecute(s);
-            showSavedNews();
+
+            //If there are new news in the data base or if this is the first time the user
+            // run the app, then the database will be empty, but we  put the news after fetching in doInBackground method
+            // which onPostExecute method run after, so there will be news in the data base then we
+            //need to show them
+            //
+            if (areThereNews || firstTimeRunningApp) {
+
+                //update Show them by updating the list view arrays
+                showSavedNews();
+
+            }
         }
     }
 
 
-    //this method gets the data out of the data base and add the information to the arraysLists
+    //this method gets the data out of the data base then add the information to the arraysLists
     //and then it notifies the array adapter
     public void showSavedNews() {
         try {
@@ -168,10 +190,11 @@ public class MainActivity extends AppCompatActivity {
 
 
             }
+            //We close the cursor since We don't need it any more
+
             c.close();
 
             Log.i("counterOfShowing", "1 ");
-            Log.i("counterOfShowing", "Just Checking ");
 
 
         } catch (Exception e) {
@@ -189,32 +212,34 @@ public class MainActivity extends AppCompatActivity {
 
         newsListView = (ListView) findViewById(R.id.newsListView);
 
-        newsUrls = new ArrayList<String>();
-        newsFetched = new ArrayList<String>();
+        newsUrls = new ArrayList<>();
+        newsFetched = new ArrayList<>();
 
         database = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
         database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR)");
 
-        //database.execSQL("DELETE FROM news");
+
+        //Initialize json
         json = new JSONDownloader();
-        arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, newsFetched);
+        //Initialize the arrayAdapter
+
+        arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, newsFetched);
 
         Cursor c = database.rawQuery("SELECT * FROM news", null);
 
-        //if there aren't anything in the database then we run the json to put the information
-        if (c.getCount() < 1) {
-
-            json.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
-
-            Log.i("ThereIs ", String.valueOf(c.getCount()));
-            areNewsRefreshed = true;
-
-        } else {
+        if (c.getCount() > 0) {
+            firstTimeRunningApp = false;
             showSavedNews();
-
+            Log.i("databa", "there is:" + c.getCount());
         }
+        Log.i("datab", "There are: " + c.getCount() );
 
         c.close();
+        json.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
+
+
+        Log.i("ThereIs ", String.valueOf(c.getCount()));
+        areNewsRefreshed = true;
 
 
         Log.i("IsThere?", String.valueOf(c.getCount()));
@@ -250,7 +275,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
 
-            HttpURLConnection urlConnection = null;
+            HttpURLConnection urlConnection;
 
             urlConnection = (HttpURLConnection) url.openConnection();
 
@@ -279,13 +304,17 @@ public class MainActivity extends AppCompatActivity {
     public boolean thereAreNewNews(String newTitle) {
 
 
+        //you have to initilize the cursor everyTime you use it, for an unknown reason
+        Cursor c = database.rawQuery("SELECT * FROM news", null);
         int newsTitleIndex = c.getColumnIndex("title");
 
-        String oldTitle = c.getString(newsTitleIndex);
         c.moveToFirst();
+
+        String oldTitle = c.getString(newsTitleIndex);
 
         Log.i("Titles", "old: " + oldTitle + ", new: " + newTitle);
         //if this is true then there aren't new news because the new title equals to the old one
+        c.close();
         if (newTitle.equals(oldTitle)) {
             return false;
         } else {
