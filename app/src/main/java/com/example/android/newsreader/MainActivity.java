@@ -6,6 +6,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.service.autofill.FieldClassification;
@@ -75,24 +76,22 @@ public class MainActivity extends AppCompatActivity {
                     Log.i("Count", Integer.toString(i));
 
 
-                    //Setting the url that contain the information of each report
-                    propUrlString = "https://hacker-news.firebaseio.com/v0/item/" + arr.get(i) + ".json?print=pretty";
+                    int articleId = (int) arr.get(i);
+                    //Setting the url that contain the information of each article
+                    propUrlString = "https://hacker-news.firebaseio.com/v0/item/" + articleId + ".json?print=pretty";
                     propUrl = new URL(propUrlString);
                     //now that we have the url, we fetch the json from it
                     topStoriesPropData = fetchingJSONData(propUrl);
                     //we get the information and store it inside variables
                     JSONObject jsonObject = new JSONObject(topStoriesPropData);
-
-                    String title = jsonObject.getString("title").replace("\'", "");
-
-
-                    Log.i("titles", title);
+                    String title = jsonObject.getString("title");
                     String urlsOfTitles = jsonObject.getString("url");
-                    //Log.i("titles", title);
-                    //Log.i("urls", urlsOfTitles);
 
 
-                    String s = "INSERT INTO news (title, url) VALUES ('" + title + "','" + urlsOfTitles + "')";
+                    String sql = "INSERT INTO news (title, url) VALUES (?, ?)";
+                    SQLiteStatement statement = database.compileStatement(sql);
+                    statement.bindString(1, title);
+                    statement.bindString(2, urlsOfTitles);
 
 
                     //If there aren't any news stored in the dataBase then we add news to the data base -->1
@@ -100,11 +99,10 @@ public class MainActivity extends AppCompatActivity {
                     // the first time we run the app because the database is empty-->2
 
                     if (c.getCount() < numberOfTitles) {   //1
-                        
+
                         listViewNeedsUpdate = true;  //2
 
-                        database.execSQL(s);
-
+                        statement.execute();
                     } else {
 
 
@@ -122,7 +120,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                             listViewNeedsUpdate = thereAreNewNews(title);     //2
-
+                            Log.i("areThereNewNews", listViewNeedsUpdate.toString());
 
                         }
 
@@ -134,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
                                 newsUrls.clear();                        //6
                             }
 
-                            database.execSQL(s);  //7
+                            statement.execute();     //7
                         }
                     }
 
@@ -159,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
             // which onPostExecute method run after, so there will be news in the data base then we
             //need to show them
             //
-            if (listViewNeedsUpdate ) {            // listViewNeedsUpdate = true then there are new news in db that need to be shown
+            if (listViewNeedsUpdate) {            // listViewNeedsUpdate = true then there are new news in db that need to be shown
 
 
                 //update/Show them by updating the list view arrays
@@ -218,7 +216,7 @@ public class MainActivity extends AppCompatActivity {
         database = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
         database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR)");
 
-        database.execSQL("DELETE FROM news");
+        //database.execSQL("DELETE FROM news");
 
         //Initialize json
         json = new JSONDownloader();
@@ -230,19 +228,16 @@ public class MainActivity extends AppCompatActivity {
 
         if (c.getCount() > 0) {
             showSavedNews();
-            Log.i("databa", "there is: " + c.getCount());
+            Log.i("databaseItems", "there is: " + c.getCount());
         }
-        Log.i("datab", "There are: " + c.getCount() );
+        Log.i("databaseItems", "There are: " + c.getCount());
 
         c.close();
         json.execute("https://hacker-news.firebaseio.com/v0/topstories.json?print=pretty");
 
 
-        Log.i("ThereIs ", String.valueOf(c.getCount()));
         areNewsRefreshed = true;
 
-
-        Log.i("IsThere?", String.valueOf(c.getCount()));
 
         newsListView.setAdapter(arrayAdapter);
 
@@ -312,13 +307,12 @@ public class MainActivity extends AppCompatActivity {
 
         String oldTitle = c.getString(newsTitleIndex);
 
-        Log.i("Titles", "old: " + oldTitle + ", new: " + newTitle);
         //if this is true then there aren't new news because the new title equals to the old one
         c.close();
         if (newTitle.equals(oldTitle)) {
             return false;
         } else {
-
+            Log.i("Titles", "old: " + oldTitle + ", new: " + newTitle);
             return true;
         }
     }
