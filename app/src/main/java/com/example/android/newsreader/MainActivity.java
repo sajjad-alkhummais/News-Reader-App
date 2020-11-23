@@ -42,8 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     Button refreshNewsBtn;
 
-    Boolean areThereNews = false;
-    Boolean firstTimeRunningApp;
+    Boolean listViewNeedsUpdate = false;
     Boolean areNewsRefreshed = false;
 
     public class JSONDownloader extends AsyncTask<String, Void, String> {
@@ -97,12 +96,12 @@ public class MainActivity extends AppCompatActivity {
 
 
                     //If there aren't any news stored in the dataBase then we add news to the data base -->1
-                    //And update the variable (firstTimeRunningApp) to be true because this is indeed
+                    //And update the variable (listViewNeedsUpdate) to be true because this is indeed
                     // the first time we run the app because the database is empty-->2
 
                     if (c.getCount() < numberOfTitles) {   //1
                         
-                        firstTimeRunningApp = true;  //2
+                        listViewNeedsUpdate = true;  //2
 
                         database.execSQL(s);
 
@@ -122,12 +121,12 @@ public class MainActivity extends AppCompatActivity {
                         if (i == 0) {        //1
 
 
-                            areThereNews = thereAreNewNews(title);     //2
+                            listViewNeedsUpdate = thereAreNewNews(title);     //2
 
 
                         }
 
-                        if (areThereNews) {     //4
+                        if (listViewNeedsUpdate) {     //4
 
                             if (i == 0) {  //4
                                 database.execSQL("DELETE FROM news");    //5
@@ -160,9 +159,10 @@ public class MainActivity extends AppCompatActivity {
             // which onPostExecute method run after, so there will be news in the data base then we
             //need to show them
             //
-            if (areThereNews || firstTimeRunningApp) {
+            if (listViewNeedsUpdate ) {            // listViewNeedsUpdate = true then there are new news in db that need to be shown
 
-                //update Show them by updating the list view arrays
+
+                //update/Show them by updating the list view arrays
                 showSavedNews();
 
             }
@@ -218,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
         database = this.openOrCreateDatabase("News", MODE_PRIVATE, null);
         database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR)");
 
+        database.execSQL("DELETE FROM news");
 
         //Initialize json
         json = new JSONDownloader();
@@ -228,9 +229,8 @@ public class MainActivity extends AppCompatActivity {
         Cursor c = database.rawQuery("SELECT * FROM news", null);
 
         if (c.getCount() > 0) {
-            firstTimeRunningApp = false;
             showSavedNews();
-            Log.i("databa", "there is:" + c.getCount());
+            Log.i("databa", "there is: " + c.getCount());
         }
         Log.i("datab", "There are: " + c.getCount() );
 
@@ -304,7 +304,7 @@ public class MainActivity extends AppCompatActivity {
     public boolean thereAreNewNews(String newTitle) {
 
 
-        //you have to initilize the cursor everyTime you use it, for an unknown reason
+        //you have to initialize the cursor everyTime you use it, for an unknown reason
         Cursor c = database.rawQuery("SELECT * FROM news", null);
         int newsTitleIndex = c.getColumnIndex("title");
 
