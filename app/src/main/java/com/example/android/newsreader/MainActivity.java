@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
                     //this is more efficient way to add items to a database
                     String sql = "INSERT INTO news (title, url) VALUES (?, ?)";
 
@@ -222,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
         //database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR, id INTEGER PRIMARY KEY)");
 
         //database.execSQL("DROP TABLE IF EXISTS news");
-        database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR, id INTEGER)");
+        database.execSQL("CREATE TABLE IF NOT EXISTS news (title VARCHAR, url VARCHAR, id INTEGER PRIMARY KEY NOT NULL)");
 
         //database.execSQL("DELETE FROM news");
 
